@@ -28,22 +28,22 @@ export async function generateMetadata(): Promise<Metadata> {
     metadataBase: new URL(origin),
     title: "Pipeline RM Funding | BRI Jatinegara",
     description:
-      "Demo mobile-first untuk kunjungan harian, foto bukti, pipeline, dan manajemen data RM Funding BRI Jatinegara.",
+      "Demo mobile-first untuk kunjungan harian, foto bukti, pipeline, dan monitoring kinerja RM Funding BRI Jatinegara.",
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
     },
     openGraph: {
       title: "Pipeline RM Funding | BRI Jatinegara",
-      description: "Kunjungan mobile, bukti foto, pipeline, dan kontrol data dalam satu aplikasi.",
-      images: [{ url: new URL("/og-mobile.jpg", origin).toString(), width: 1672, height: 941 }],
+      description: "Kunjungan mobile, bukti foto, pipeline, dan monitoring kinerja dalam satu aplikasi.",
+      images: [{ url: new URL("/og-public.jpg", origin).toString(), width: 1672, height: 941 }],
       type: "website",
     },
     twitter: {
       card: "summary_large_image",
       title: "Pipeline RM Funding | BRI Jatinegara",
       description: "Demo mobile-first RM Funding Jatinegara.",
-      images: [new URL("/og-mobile.jpg", origin).toString()],
+      images: [new URL("/og-public.jpg", origin).toString()],
     },
   };
 }
