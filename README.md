@@ -8,6 +8,7 @@ Demo mobile-first untuk monitoring pipeline, kunjungan harian, bukti foto, dan k
 - pencatatan kunjungan dari mobile web;
 - unggah bukti foto dan status review atasan;
 - tampilan berdasarkan peran RM, Lead RM, dan Pemimpin Cabang;
+- manajemen kapasitas, arsip, retensi, dan audit data cabang untuk Pemimpin Cabang;
 - simulasi login email, CAPTCHA, dan OTP.
 
 Demo ini masih frontend-only. Unggah foto, OTP, penyimpanan database, backup, dan penghapusan data belum terhubung ke layanan produksi.

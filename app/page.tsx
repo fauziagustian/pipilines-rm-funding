@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   Activity,
+  Archive,
   Bell,
   BriefcaseBusiness,
   Building2,
@@ -15,12 +16,16 @@ import {
   CircleAlert,
   CircleCheckBig,
   ClipboardCheck,
+  CloudDownload,
   Clock3,
+  Database,
   Download,
   Eye,
   FileChartColumnIncreasing,
+  FileArchive,
   Filter,
   Gauge,
+  HardDrive,
   Image as ImageIcon,
   KeyRound,
   LayoutDashboard,
@@ -33,12 +38,14 @@ import {
   MoreHorizontal,
   Navigation,
   Plus,
+  RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   Smartphone,
   Sparkles,
   Target,
+  Trash2,
   TrendingDown,
   TrendingUp,
   Upload,
@@ -56,6 +63,7 @@ type NavKey =
   | "Nasabah"
   | "Pusat Bisnis"
   | "Laporan"
+  | "Manajemen Data"
   | "Pengaturan";
 
 type VisitStatus = "Menunggu Review" | "Disetujui" | "Perlu Perbaikan" | "Draft";
@@ -97,6 +105,7 @@ const navItems: Array<{
   { label: "Nasabah", icon: UsersRound },
   { label: "Pusat Bisnis", icon: Building2 },
   { label: "Laporan", icon: FileChartColumnIncreasing },
+  { label: "Manajemen Data", icon: Database },
   { label: "Pengaturan", icon: Settings },
 ];
 
@@ -341,7 +350,7 @@ function Sidebar({
             );
           })}
           <span className="nav-caption nav-caption-spaced">SISTEM</span>
-          {navItems.slice(7).map((item) => {
+          {navItems.slice(7).filter((item) => role === "Pemimpin Cabang" || item.label !== "Manajemen Data").map((item) => {
             const Icon = item.icon;
             return (
               <button
@@ -853,14 +862,110 @@ function VisitFormModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function MobileBottomNav({ active, onChange, onAddVisit, onMore }: { active: NavKey; onChange: (key: NavKey) => void; onAddVisit: () => void; onMore: () => void }) {
+function DataManagementPage() {
+  const [rmCount, setRmCount] = useState(15);
+  const [visitsPerDay, setVisitsPerDay] = useState(4);
+  const [photosPerVisit, setPhotosPerVisit] = useState(3);
+  const [photoKb, setPhotoKb] = useState(400);
+  const [message, setMessage] = useState("");
+  const monthlyVisits = rmCount * visitsPerDay * 22;
+  const monthlyGb = (monthlyVisits * photosPerVisit * photoKb) / 1024 / 1024;
+  const yearlyGb = monthlyGb * 12;
+  const safeYearlyGb = yearlyGb * 1.2;
+  const metadataMb = (monthlyVisits * 12) / 1024;
+
+  return (
+    <>
+      <section className="data-heading">
+        <div className="data-title-icon"><Database size={24} /></div>
+        <div><span>PEMIMPIN CABANG · BRI JATINEGARA</span><h1>Manajemen Data Cabang</h1><p>Pantau kapasitas, arsip, retensi, dan pengajuan penghapusan data aktivitas RM Funding.</p></div>
+        <button className="secondary-button" onClick={() => setMessage("Estimasi kapasitas telah diperbarui berdasarkan asumsi terbaru.")}><RefreshCw size={16} />Perbarui estimasi</button>
+      </section>
+
+      <div className="data-alert"><ShieldCheck size={18} /><p><strong>Akses terbatas pada cakupan Cabang Jatinegara.</strong> Setiap unduhan arsip, perubahan kebijakan, dan pengajuan penghapusan dicatat dalam audit trail.</p></div>
+
+      <section className="storage-kpi-grid">
+        <article><span className="storage-kpi-icon blue"><HardDrive size={20} /></span><div><em>Foto per bulan</em><strong>{monthlyGb.toFixed(2)} GB</strong><small>{monthlyVisits.toLocaleString("id-ID")} kunjungan</small></div></article>
+        <article><span className="storage-kpi-icon green"><Database size={20} /></span><div><em>Data terstruktur</em><strong>{metadataMb.toFixed(1)} MB/bln</strong><small>±{(metadataMb * 12).toFixed(0)} MB per tahun</small></div></article>
+        <article><span className="storage-kpi-icon orange"><Archive size={20} /></span><div><em>Kapasitas aman tahun 1</em><strong>{safeYearlyGb.toFixed(0)} GB</strong><small>Termasuk buffer 20%</small></div></article>
+        <article><span className="storage-kpi-icon violet"><CloudDownload size={20} /></span><div><em>Backup bulanan</em><strong>{(monthlyGb * 1.05).toFixed(2)} GB</strong><small>Arsip terenkripsi</small></div></article>
+      </section>
+
+      <section className="data-grid">
+        <article className="panel storage-estimator">
+          <div className="panel-heading"><div><span className="eyebrow">KALKULATOR KAPASITAS</span><h2>Asumsi Pemakaian Mobile</h2></div><span className="recommended-pill">Baseline rekomendasi</span></div>
+          <div className="estimator-controls">
+            <label><span>RM aktif</span><input aria-label="Jumlah RM aktif" type="number" min="1" max="100" value={rmCount} onChange={(event) => setRmCount(Math.max(1, Number(event.target.value) || 1))} /><em>orang</em></label>
+            <label><span>Kunjungan / RM / hari</span><input aria-label="Kunjungan per RM per hari" type="number" min="1" max="15" value={visitsPerDay} onChange={(event) => setVisitsPerDay(Math.max(1, Number(event.target.value) || 1))} /><em>kunjungan</em></label>
+            <label><span>Foto / kunjungan</span><input aria-label="Foto per kunjungan" type="number" min="1" max="5" value={photosPerVisit} onChange={(event) => setPhotosPerVisit(Math.max(1, Number(event.target.value) || 1))} /><em>foto</em></label>
+            <label><span>Rata-rata foto</span><input aria-label="Ukuran rata-rata foto" type="number" min="100" max="1000" step="50" value={photoKb} onChange={(event) => setPhotoKb(Math.max(100, Number(event.target.value) || 100))} /><em>KB</em></label>
+          </div>
+          <div className="estimator-result"><div><span>22 hari kerja</span><strong>{monthlyVisits.toLocaleString("id-ID")} kunjungan/bulan</strong></div><div><span>Proyeksi 12 bulan</span><strong>{yearlyGb.toFixed(1)} GB foto</strong></div><div><span>Dengan buffer 20%</span><strong>{safeYearlyGb.toFixed(1)} GB</strong></div></div>
+        </article>
+
+        <article className="panel upload-policy-panel">
+          <div className="panel-heading"><div><span className="eyebrow">KEBIJAKAN UPLOAD</span><h2>Optimasi Foto Otomatis</h2></div><Smartphone size={20} /></div>
+          <div className="policy-list">
+            <div><span>01</span><p><strong>Validasi di ponsel</strong><em>Terima JPG, PNG, HEIC hingga 10 MB.</em></p></div>
+            <div><span>02</span><p><strong>Kompresi sebelum upload</strong><em>WebP 1.600 px, kualitas 78, target 400 KB.</em></p></div>
+            <div><span>03</span><p><strong>Batas server</strong><em>Maksimal 1 MB/foto dan 3 foto/kunjungan.</em></p></div>
+            <div><span>04</span><p><strong>Metadata aman</strong><em>EXIF pribadi dihapus; lokasi dan waktu disimpan terpisah.</em></p></div>
+          </div>
+        </article>
+      </section>
+
+      <section className="panel lifecycle-panel">
+        <div className="panel-heading"><div><span className="eyebrow">SIKLUS HIDUP DATA</span><h2>Retensi, Backup, dan Penghapusan Aman</h2></div><span className="policy-status"><ShieldCheck size={15} />Butuh persetujuan Compliance</span></div>
+        <div className="lifecycle-track">
+          <div className="lifecycle-item active"><span>0–12 bulan</span><strong>Online & aktif</strong><p>Foto tersedia untuk dashboard dan audit cabang.</p><em>±{safeYearlyGb.toFixed(0)} GB</em></div>
+          <ChevronRight size={20} />
+          <div className="lifecycle-item archive"><span>13–24 bulan</span><strong>Arsip bulanan</strong><p>Unduh paket terenkripsi beserta checksum dan manifest.</p><em>Cold archive</em></div>
+          <ChevronRight size={20} />
+          <div className="lifecycle-item purge"><span>&gt;24 bulan</span><strong>Kandidat hapus</strong><p>Hanya setelah backup tervalidasi dan persetujuan berjenjang.</p><em>30 hari recycle</em></div>
+        </div>
+        <div className="delete-guardrail"><CircleAlert size={18} /><p><strong>Data tidak dihapus otomatis berdasarkan umur.</strong> Legal hold, investigasi, audit, dan kebijakan retensi bank selalu mengalahkan jadwal penghapusan.</p></div>
+      </section>
+
+      <section className="data-bottom-grid">
+        <article className="panel archive-list-panel">
+          <div className="panel-heading"><div><span className="eyebrow">PUSAT BACKUP</span><h2>Arsip Siap Diunduh</h2></div><button className="plain-button">Lihat semua <ChevronRight size={15} /></button></div>
+          <div className="archive-list">
+            {[
+              ["Juli 2026", "1,48 GB", "1.276 kunjungan", "Terverifikasi"],
+              ["Juni 2026", "1,39 GB", "1.198 kunjungan", "Terverifikasi"],
+              ["Mei 2026", "1,51 GB", "1.304 kunjungan", "Terverifikasi"],
+            ].map(([month, size, count, status]) => (
+              <div key={month}><span className="archive-file-icon"><FileArchive size={19} /></span><p><strong>{month}</strong><em>{count} · {size}</em></p><span className="archive-verified"><Check size={13} />{status}</span><button aria-label={`Unduh backup ${month}`} onClick={() => setMessage(`Backup ${month} siap diunduh. Tautan berlaku 15 menit.`)}><Download size={17} /></button></div>
+            ))}
+          </div>
+        </article>
+
+        <article className="panel safe-delete-panel">
+          <div className="panel-heading"><div><span className="eyebrow">PENGHAPUSAN TERKENDALI</span><h2>Proses Empat Lapis</h2></div><Trash2 size={19} /></div>
+          <ol><li><span>1</span><p><strong>Ekspor</strong><em>Arsip dan manifest</em></p></li><li><span>2</span><p><strong>Verifikasi</strong><em>Checksum dan jumlah berkas</em></p></li><li><span>3</span><p><strong>Persetujuan</strong><em>Pinca dan Compliance</em></p></li><li><span>4</span><p><strong>Recycle 30 hari</strong><em>Dapat dipulihkan sebelum purge</em></p></li></ol>
+          <button className="danger-outline-button" onClick={() => setMessage("Permintaan penghapusan dibuat sebagai draft dan belum menghapus data apa pun.")}><Trash2 size={16} />Ajukan penghapusan data</button>
+        </article>
+      </section>
+
+      <section className="branch-governance-grid">
+        <div><Building2 size={20} /><p><strong>Cabang Jatinegara</strong><span>Cakupan data dan arsip dibatasi per cabang</span></p><button onClick={() => setMessage("Cakupan aktif: BRI Cabang Jatinegara.")}>Lihat cakupan</button></div>
+        <div><ShieldCheck size={20} /><p><strong>Persetujuan berjenjang</strong><span>Tindakan sensitif tidak diproses sepihak</span></p><button onClick={() => setMessage("Alur persetujuan: Pinca, Compliance, lalu pelaksana sistem.")}>Lihat alur</button></div>
+        <div><FileChartColumnIncreasing size={20} /><p><strong>1.842 audit event</strong><span>30 hari terakhir di Cabang Jatinegara</span></p><button onClick={() => setMessage("Audit trail Cabang Jatinegara siap ditinjau.")}>Lihat audit</button></div>
+      </section>
+
+      {message ? <div className="data-toast" role="status"><CircleCheckBig size={17} />{message}<button onClick={() => setMessage("")} aria-label="Tutup pemberitahuan"><X size={15} /></button></div> : null}
+    </>
+  );
+}
+
+function MobileBottomNav({ active, role, onChange, onAddVisit, onMore }: { active: NavKey; role: string; onChange: (key: NavKey) => void; onAddVisit: () => void; onMore: () => void }) {
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigasi mobile">
       <button className={active === "Kunjungan" ? "active" : ""} onClick={() => onChange("Kunjungan")}><Camera size={20} /><span>Kunjungan</span></button>
       <button className={active === "Pipeline" ? "active" : ""} onClick={() => onChange("Pipeline")}><ListFilter size={20} /><span>Pipeline</span></button>
       <button className="mobile-add-visit" onClick={onAddVisit} aria-label="Catat kunjungan"><Plus size={24} /></button>
       <button className={active === "Ringkasan" ? "active" : ""} onClick={() => onChange("Ringkasan")}><LayoutDashboard size={20} /><span>Ringkasan</span></button>
-      <button onClick={onMore}><Menu size={20} /><span>Lainnya</span></button>
+      {role === "Pemimpin Cabang" ? <button className={active === "Manajemen Data" ? "active" : ""} onClick={() => onChange("Manajemen Data")}><Database size={20} /><span>Data</span></button> : <button onClick={onMore}><Menu size={20} /><span>Lainnya</span></button>}
     </nav>
   );
 }
@@ -1029,7 +1134,7 @@ function PipelinePage({
   );
 }
 
-type ModuleKey = Exclude<NavKey, "Kunjungan" | "Ringkasan" | "Pipeline">;
+type ModuleKey = Exclude<NavKey, "Kunjungan" | "Ringkasan" | "Pipeline" | "Manajemen Data">;
 
 const moduleContent: Record<ModuleKey, { title: string; subtitle: string; items: Array<[string, string, string]> }> = {
   Aktivitas: {
@@ -1235,6 +1340,9 @@ export default function Home() {
 
   function changeRole(nextRole: string) {
     setRole(nextRole);
+    if (nextRole !== "Pemimpin Cabang" && active === "Manajemen Data") {
+      setActive("Kunjungan");
+    }
   }
 
   const filteredRows = useMemo(() => {
@@ -1272,12 +1380,14 @@ export default function Home() {
             />
           ) : active === "Pipeline" ? (
             <PipelinePage rows={filteredRows} onSelect={setSelected} onAdd={() => setAddOpen(true)} />
+          ) : active === "Manajemen Data" ? (
+            role === "Pemimpin Cabang" ? <DataManagementPage /> : <VisitPage role={role} onAddVisit={() => setVisitOpen(true)} />
           ) : (
             <ModulePage module={active as ModuleKey} />
           )}
         </main>
       </div>
-      <MobileBottomNav active={active} onChange={setActive} onAddVisit={() => setVisitOpen(true)} onMore={() => setMobileOpen(true)} />
+      <MobileBottomNav active={active} role={role} onChange={setActive} onAddVisit={() => setVisitOpen(true)} onMore={() => setMobileOpen(true)} />
       {selected ? <DetailDrawer row={selected} onClose={() => setSelected(null)} /> : null}
       {addOpen ? <AddPipelineModal onClose={() => setAddOpen(false)} /> : null}
       {visitOpen ? <VisitFormModal onClose={() => setVisitOpen(false)} /> : null}
