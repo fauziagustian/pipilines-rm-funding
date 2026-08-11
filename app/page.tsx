@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   Activity,
@@ -307,7 +307,7 @@ function Sidebar({
         aria-label="Tutup navigasi"
         onClick={onClose}
       />
-      <aside className={`sidebar ${mobileOpen ? "is-open" : ""}`}>
+      <aside className={`sidebar ${mobileOpen ? "is-open" : ""}`} aria-label="Menu aplikasi">
         <div className="brand-row">
           <div className="brand-mark">P</div>
           <div>
@@ -958,14 +958,14 @@ function DataManagementPage() {
   );
 }
 
-function MobileBottomNav({ active, role, onChange, onAddVisit, onMore }: { active: NavKey; role: string; onChange: (key: NavKey) => void; onAddVisit: () => void; onMore: () => void }) {
+function MobileBottomNav({ active, onChange, onAddVisit, onMore }: { active: NavKey; onChange: (key: NavKey) => void; onAddVisit: () => void; onMore: () => void }) {
   return (
     <nav className="mobile-bottom-nav" aria-label="Navigasi mobile">
       <button className={active === "Kunjungan" ? "active" : ""} onClick={() => onChange("Kunjungan")}><Camera size={20} /><span>Kunjungan</span></button>
       <button className={active === "Pipeline" ? "active" : ""} onClick={() => onChange("Pipeline")}><ListFilter size={20} /><span>Pipeline</span></button>
       <button className="mobile-add-visit" onClick={onAddVisit} aria-label="Catat kunjungan"><Plus size={24} /></button>
       <button className={active === "Ringkasan" ? "active" : ""} onClick={() => onChange("Ringkasan")}><LayoutDashboard size={20} /><span>Ringkasan</span></button>
-      {role === "Pemimpin Cabang" ? <button className={active === "Manajemen Data" ? "active" : ""} onClick={() => onChange("Manajemen Data")}><Database size={20} /><span>Data</span></button> : <button onClick={onMore}><Menu size={20} /><span>Lainnya</span></button>}
+      <button onClick={onMore}><Menu size={20} /><span>Lainnya</span></button>
     </nav>
   );
 }
@@ -1338,6 +1338,38 @@ export default function Home() {
   const [visitOpen, setVisitOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
 
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const desktopViewport = window.matchMedia("(min-width: 901px)");
+    const closeOnDesktop = (event: MediaQueryListEvent) => {
+      if (event.matches) setMobileOpen(false);
+    };
+
+    if (desktopViewport.addEventListener) {
+      desktopViewport.addEventListener("change", closeOnDesktop);
+      return () => desktopViewport.removeEventListener("change", closeOnDesktop);
+    }
+
+    desktopViewport.addListener(closeOnDesktop);
+    return () => desktopViewport.removeListener(closeOnDesktop);
+  }, []);
+
   function changeRole(nextRole: string) {
     setRole(nextRole);
     if (nextRole !== "Pemimpin Cabang" && active === "Manajemen Data") {
@@ -1356,7 +1388,7 @@ export default function Home() {
   }, [search]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${mobileOpen ? "is-menu-open" : ""}`}>
       <Sidebar active={active} role={role} onRoleChange={changeRole} onChange={setActive} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
       <div className="app-main">
         <Topbar
@@ -1387,7 +1419,7 @@ export default function Home() {
           )}
         </main>
       </div>
-      <MobileBottomNav active={active} role={role} onChange={setActive} onAddVisit={() => setVisitOpen(true)} onMore={() => setMobileOpen(true)} />
+      <MobileBottomNav active={active} onChange={setActive} onAddVisit={() => setVisitOpen(true)} onMore={() => setMobileOpen(true)} />
       {selected ? <DetailDrawer row={selected} onClose={() => setSelected(null)} /> : null}
       {addOpen ? <AddPipelineModal onClose={() => setAddOpen(false)} /> : null}
       {visitOpen ? <VisitFormModal onClose={() => setVisitOpen(false)} /> : null}
