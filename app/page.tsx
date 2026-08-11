@@ -38,6 +38,7 @@ import {
   MoreHorizontal,
   Navigation,
   Plus,
+  Printer,
   RefreshCw,
   Search,
   Settings,
@@ -1134,7 +1135,7 @@ function PipelinePage({
   );
 }
 
-type ModuleKey = Exclude<NavKey, "Kunjungan" | "Ringkasan" | "Pipeline" | "Manajemen Data">;
+type ModuleKey = Exclude<NavKey, "Kunjungan" | "Ringkasan" | "Pipeline" | "Laporan" | "Manajemen Data">;
 
 const moduleContent: Record<ModuleKey, { title: string; subtitle: string; items: Array<[string, string, string]> }> = {
   Aktivitas: {
@@ -1152,17 +1153,225 @@ const moduleContent: Record<ModuleKey, { title: string; subtitle: string; items:
     subtitle: "Petakan potensi wilayah dan prospek baru agar pembagian coverage RM lebih terarah.",
     items: [["13", "Zona bisnis", "Wilayah Jatinegara"], ["1.325", "Prospek new business", "Estimasi Rp162,2 M"], ["1.248", "Status BRI belum terisi", "Perlu cleansing data"]],
   },
-  Laporan: {
-    title: "Laporan Manajemen",
-    subtitle: "Laporan siap pakai untuk evaluasi harian, mingguan, dan rapat kinerja cabang.",
-    items: [["7", "Laporan tersedia", "Siap diekspor"], ["3", "Dashboard pimpinan", "Data lintas produk"], ["09:42", "Sinkronisasi terakhir", "9 Agustus 2026"]],
-  },
   Pengaturan: {
     title: "Pengaturan Sistem",
     subtitle: "Kelola pengguna, akses per peran, target, notifikasi, dan kebijakan keamanan aplikasi.",
     items: [["3", "Kelompok akses", "Pinca, Lead RM, RM"], ["OTP", "Verifikasi email", "Wajib saat login"], ["Aktif", "Audit trail", "Semua perubahan tercatat"]],
   },
 };
+
+const reportMetrics = [
+  { label: "Potensi pipeline", value: "Rp297,45 M", note: "154 pipeline aktif", icon: WalletCards, tone: "blue" },
+  { label: "Realisasi funding", value: "Rp215,30 M", note: "72,4% dari target", icon: Target, tone: "green" },
+  { label: "Kunjungan", value: "196", note: "174 telah disetujui", icon: Camera, tone: "orange" },
+  { label: "Kapasitas data", value: "1,51 GB", note: "Estimasi foto per bulan", icon: HardDrive, tone: "violet" },
+] as const;
+
+const reportProducts = [
+  { name: "Giro", realization: "Rp112,40 M", progress: 86.5, tone: "blue" },
+  { name: "Deposito", realization: "Rp69,80 M", progress: 77.6, tone: "green" },
+  { name: "Tabungan", realization: "Rp33,10 M", progress: 60.2, tone: "orange" },
+] as const;
+
+const reportRMRows = [
+  { rank: 1, name: "Kinanah", pipeline: "Rp58,20 M", realization: "Rp45,10 M", visits: 42, score: "91%" },
+  { rank: 2, name: "Karlina", pipeline: "Rp51,75 M", realization: "Rp38,60 M", visits: 39, score: "87%" },
+  { rank: 3, name: "Fitri", pipeline: "Rp46,90 M", realization: "Rp34,20 M", visits: 36, score: "82%" },
+  { rank: 4, name: "Rizky", pipeline: "Rp41,30 M", realization: "Rp29,90 M", visits: 34, score: "78%" },
+  { rank: 5, name: "Aulia", pipeline: "Rp36,85 M", realization: "Rp25,70 M", visits: 31, score: "74%" },
+] as const;
+
+const reportLibrary = [
+  {
+    title: "Laporan Eksekutif Cabang",
+    description: "KPI utama, realisasi produk, leaderboard RM, dan rekomendasi pimpinan.",
+    meta: "PDF · 4 halaman",
+    icon: FileChartColumnIncreasing,
+    downloadable: true,
+  },
+  {
+    title: "Detail Pipeline",
+    description: "Daftar prospek, status Hot/Warm/Cold, probabilitas, komitmen, dan tindak lanjut.",
+    meta: "Excel / CSV · 154 baris",
+    icon: ListFilter,
+    downloadable: false,
+  },
+  {
+    title: "Rekap Kunjungan",
+    description: "Aktivitas harian RM, status review, lokasi, hasil kunjungan, dan bukti foto.",
+    meta: "PDF / Excel · 196 aktivitas",
+    icon: Camera,
+    downloadable: false,
+  },
+  {
+    title: "Kapasitas & Retensi Data",
+    description: "Pertumbuhan penyimpanan, status backup, arsip, dan kandidat penghapusan aman.",
+    meta: "Khusus Pemimpin Cabang",
+    icon: Database,
+    downloadable: false,
+  },
+] as const;
+
+function ReportsPage({ role }: { role: string }) {
+  const [period, setPeriod] = useState("1–11 Agustus 2026");
+  const [notice, setNotice] = useState("");
+  const visibleReports = role === "Pemimpin Cabang" ? reportLibrary : reportLibrary.slice(0, 3);
+
+  function previewExport(title: string) {
+    setNotice(`${title} siap dibuat pada versi produksi. PDF sample eksekutif sudah dapat diunduh.`);
+  }
+
+  return (
+    <>
+      <section className="report-hero">
+        <div className="report-hero-copy">
+          <div className="intro-meta">
+            <span className="demo-badge">DATA DEMO</span>
+            <span>Diperbarui 11 Agu 2026, 09:42 WIB</span>
+          </div>
+          <h1>Laporan Kinerja RM Funding</h1>
+          <p>Sample laporan terpadu untuk evaluasi pipeline, pencapaian produk, aktivitas kunjungan, dan kapasitas data tanpa membuat pivot spreadsheet.</p>
+          <span className="report-role"><UserRound size={14} />Tampilan untuk <strong>{role}</strong></span>
+        </div>
+        <div className="report-page-actions">
+          <label className="report-period">
+            <CalendarDays size={16} />
+            <span>Periode</span>
+            <select value={period} onChange={(event) => setPeriod(event.target.value)} aria-label="Periode laporan">
+              <option>1–11 Agustus 2026</option>
+              <option>Agustus 2026</option>
+              <option>Triwulan III 2026</option>
+            </select>
+          </label>
+          <button className="secondary-button" onClick={() => window.print()}><Printer size={16} />Cetak</button>
+          <a
+            className="primary-button report-download-button"
+            href="/sample-laporan-rm-funding-jatinegara.pdf"
+            download
+            onClick={() => setNotice("PDF sample laporan mulai diunduh.")}
+          >
+            <Download size={16} />Unduh PDF sample
+          </a>
+        </div>
+      </section>
+
+      <div className="report-disclaimer"><ShieldCheck size={15} /><strong>DATA DEMO — BUKAN DATA RESMI BANK.</strong> Angka pada halaman dan PDF hanya untuk menggambarkan format laporan aplikasi.</div>
+
+      <section className="report-kpi-grid" aria-label="Ringkasan indikator laporan">
+        {reportMetrics.map((metric) => {
+          const Icon = metric.icon;
+          return (
+            <article key={metric.label}>
+              <span className={`report-kpi-icon ${metric.tone}`}><Icon size={19} /></span>
+              <div><span>{metric.label}</span><strong>{metric.value}</strong><em>{metric.note}</em></div>
+            </article>
+          );
+        })}
+      </section>
+
+      <section className="report-main-grid">
+        <article className="panel report-product-panel">
+          <div className="panel-heading">
+            <div><span className="eyebrow">PENCAPAIAN PRODUK</span><h2>Realisasi funding terhadap target</h2></div>
+            <span className="report-period-chip">{period}</span>
+          </div>
+          <div className="report-product-list">
+            {reportProducts.map((product) => (
+              <div key={product.name}>
+                <div className="report-product-copy"><strong>{product.name}</strong><span>{product.realization}</span><em>{product.progress}%</em></div>
+                <div className="report-progress"><span className={product.tone} style={{ width: `${product.progress}%` }} /></div>
+              </div>
+            ))}
+          </div>
+          <div className="report-product-total"><span>Total realisasi</span><strong>Rp215,30 M</strong><em>72,4% dari target cabang</em></div>
+        </article>
+
+        <article className="panel report-visit-panel">
+          <div className="panel-heading"><div><span className="eyebrow">KUNJUNGAN HARIAN</span><h2>Status bukti kunjungan</h2></div><Camera size={20} /></div>
+          <div className="report-visit-ring" aria-label="88,8 persen kunjungan disetujui">
+            <div><strong>88,8%</strong><span>disetujui</span></div>
+          </div>
+          <div className="report-visit-legend">
+            <span><i className="approved" />Disetujui <strong>174</strong></span>
+            <span><i className="review" />Perlu review <strong>14</strong></span>
+            <span><i className="revision" />Perbaikan <strong>8</strong></span>
+          </div>
+        </article>
+      </section>
+
+      <section className="panel report-rm-panel">
+        <div className="panel-heading table-heading">
+          <div><span className="eyebrow">KINERJA TIM</span><h2>Sample leaderboard RM Funding</h2></div>
+          <span className="report-table-note">Urutan berdasarkan skor gabungan</span>
+        </div>
+        <div className="report-table-wrap">
+          <table className="report-table">
+            <thead><tr><th>Peringkat</th><th>RM Funding</th><th>Pipeline</th><th>Realisasi</th><th>Kunjungan</th><th>Skor</th></tr></thead>
+            <tbody>
+              {reportRMRows.map((row) => (
+                <tr key={row.rank}>
+                  <td><span className={`report-rank rank-${row.rank}`}>{row.rank}</span></td>
+                  <td><strong>{row.name}</strong></td>
+                  <td>{row.pipeline}</td>
+                  <td>{row.realization}</td>
+                  <td>{row.visits}</td>
+                  <td><span className="report-score">{row.score}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="report-secondary-grid">
+        <article className="panel report-priority-panel">
+          <div className="panel-heading"><div><span className="eyebrow">TINDAK LANJUT PRIORITAS</span><h2>Catatan untuk rapat kinerja</h2></div><CircleAlert size={20} /></div>
+          <ol>
+            <li><span>1</span><div><strong>Kawal 16 pipeline Hot senilai Rp80,35 M</strong><p>Pastikan komitmen dan next action terisi sebelum akhir minggu.</p></div></li>
+            <li><span>2</span><div><strong>Review 22 bukti kunjungan</strong><p>14 menunggu review dan 8 perlu dilengkapi oleh RM terkait.</p></div></li>
+            <li><span>3</span><div><strong>Aktifkan backup bulanan tervalidasi</strong><p>Estimasi paket backup awal 1,59 GB per bulan.</p></div></li>
+          </ol>
+        </article>
+
+        <article className="panel report-pipeline-panel">
+          <div className="panel-heading"><div><span className="eyebrow">KOMPOSISI PIPELINE</span><h2>Potensi berdasarkan status</h2></div><Gauge size={20} /></div>
+          <div className="report-pipeline-bars">
+            <div><span><i className="hot" />Hot</span><strong>Rp80,35 M</strong><em>16 data</em></div>
+            <div><span><i className="warm" />Warm</span><strong>Rp169,10 M</strong><em>91 data</em></div>
+            <div><span><i className="cold" />Cold</span><strong>Rp48,00 M</strong><em>47 data</em></div>
+          </div>
+        </article>
+      </section>
+
+      <section className="report-library-section">
+        <div className="report-section-heading"><div><span className="eyebrow">PUSAT LAPORAN</span><h2>Format laporan yang tersedia</h2><p>Setiap laporan dapat difilter menurut periode, RM, produk, status, dan wilayah.</p></div><FileArchive size={23} /></div>
+        <div className="report-library-grid">
+          {visibleReports.map((item) => {
+            const Icon = item.icon;
+            return (
+              <article key={item.title}>
+                <span className="report-file-icon"><Icon size={20} /></span>
+                <div><h3>{item.title}</h3><p>{item.description}</p><em>{item.meta}</em></div>
+                {item.downloadable ? (
+                  <a href="/sample-laporan-rm-funding-jatinegara.pdf" download onClick={() => setNotice("PDF sample laporan mulai diunduh.")} aria-label={`Unduh ${item.title}`}><Download size={16} />Unduh</a>
+                ) : (
+                  <button onClick={() => previewExport(item.title)} aria-label={`Buat ${item.title}`}><FileChartColumnIncreasing size={16} />Buat laporan</button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <footer className="page-footer report-footer">
+        <span>Sumber simulasi: workbook Pipeline RM Funding Jatinegara dan data fitur demo</span>
+        <span>Periode aktif: {period}</span>
+      </footer>
+
+      {notice ? <div className="report-toast" role="status" aria-live="polite"><CircleCheckBig size={17} /><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Tutup pemberitahuan"><X size={15} /></button></div> : null}
+    </>
+  );
+}
 
 function ModulePage({ module }: { module: ModuleKey }) {
   const content = moduleContent[module];
@@ -1186,7 +1395,6 @@ function ModulePage({ module }: { module: ModuleKey }) {
           {module === "Aktivitas" ? <CalendarDays size={33} /> : null}
           {module === "Nasabah" ? <UsersRound size={33} /> : null}
           {module === "Pusat Bisnis" ? <Building2 size={33} /> : null}
-          {module === "Laporan" ? <FileChartColumnIncreasing size={33} /> : null}
           {module === "Pengaturan" ? <Settings size={33} /> : null}
         </div>
         <span className="eyebrow">GAMBARAN MODUL</span>
@@ -1412,6 +1620,8 @@ export default function Home() {
             />
           ) : active === "Pipeline" ? (
             <PipelinePage rows={filteredRows} onSelect={setSelected} onAdd={() => setAddOpen(true)} />
+          ) : active === "Laporan" ? (
+            <ReportsPage role={role} />
           ) : active === "Manajemen Data" ? (
             role === "Pemimpin Cabang" ? <DataManagementPage /> : <VisitPage role={role} onAddVisit={() => setVisitOpen(true)} />
           ) : (
